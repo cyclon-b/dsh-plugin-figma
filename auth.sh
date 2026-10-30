@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+# Authorizes dsh-plugin-figma against the Figma remote MCP server.
+# Run ./auth.sh --help for the full option list.
+set -eu
+
+root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+if ! command -v node >/dev/null 2>&1; then
+    echo "node was not found in PATH. DeepSeek Harness runs on Node.js; install Node 22.3 or newer." >&2
+    exit 1
+fi
+
+exec node "$root/scripts/auth.mjs" "$@"

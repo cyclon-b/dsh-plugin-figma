@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0 — 2026-10-30
+
+- Browser OAuth: `auth.ps1` / `auth.sh` run authorization code + PKCE with a
+  localhost callback, register the client, and save the `figu_` access token to
+  `figma.yml` plus the refresh token to `$DSH_HOME/figma-oauth.json`.
+- `--refresh` renews the access token without a browser; `--status` shows the
+  saved token and expiry.
+- Document Figma's client-name allow-list: the default registration name is the
+  allow-listed `Claude Code`, because Figma rejects every other name.
+
 ## 1.0.1 — 2026-10-30
 
 - Support an OAuth access token (`figu_…`) in `figma.yml` (`access_token:`) and

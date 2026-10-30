@@ -455,8 +455,8 @@ async function reportToken(context) {
   const { token, source } = readToken(context);
   if (!token) {
     info('');
-    info(`Токен Figma пока не задан. Открой ${context.configPath} и заполни access_token.`);
-    info('Нужен OAuth access token (figu_…): mcp.figma.com принимает только его.');
+    info(`Токен Figma пока не задан. Запусти авторизацию в браузере: auth.ps1 или ./auth.sh.`);
+    info('Она сохранит OAuth access token (figu_…) в ' + context.configPath + '.');
     return;
   }
   info('');
@@ -464,7 +464,7 @@ async function reportToken(context) {
   if (token.startsWith('figd_')) {
     warn(
       'это персональный токен (figd_). REST API Figma его принимает, но удалённый MCP-сервер — ' +
-        'только OAuth access token (figu_…). Заполни access_token, иначе инструменты mcp__figma__* не появятся.',
+        'только OAuth access token (figu_…). Запусти auth.ps1 или ./auth.sh; без этого инструменты mcp__figma__* не появятся.',
     );
     return;
   }

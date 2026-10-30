@@ -9,6 +9,9 @@
 # (figd_...) is valid for the Figma REST API, but the remote MCP server rejects
 # it with 401, so it cannot be used here.
 #
+# Run auth.ps1 (Windows) or ./auth.sh to complete the browser flow; it fills
+# access_token automatically and stores the refresh token in figma-oauth.json.
+#
 # The token is sent with the header its prefix selects:
 #   figu_... -> Authorization: Bearer <token>
 #   figd_... -> X-Figma-Token: <token>   (REST/local servers; not mcp.figma.com)
