@@ -1,5 +1,6 @@
 node_modules/
 figma.yml
+figma-oauth.json
 *.log
 .DS_Store
 Thumbs.db
