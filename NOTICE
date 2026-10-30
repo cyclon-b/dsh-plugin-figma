@@ -1,0 +1,20 @@
+NOTICE
+
+Agent Skills under skills/
+--------------------------
+
+The skill files under skills/ are Figma's Agent Skills, copied unmodified from
+the official Figma plugin bundle:
+
+  figma@claude-plugins-official, version 2.2.157
+  skills/ directory of the distributed plugin bundle
+
+Copyright Figma, Inc. Figma distributes these skills under the Figma Developer
+Terms (https://www.figma.com/legal/developer-terms/), under which they are made
+available to users of the Figma MCP server and its related resources. They are
+not covered by this repository's MIT license, and this repository claims no
+rights to them. If you are not entitled to use the Figma MCP server and its
+skills under those terms, do not install this plugin.
+
+Everything else in this repository — the bundle patch, the installer, the
+configuration template and the documentation — is MIT licensed; see LICENSE.

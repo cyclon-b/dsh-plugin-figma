@@ -1,0 +1,54 @@
+# dsh-plugin-figma — the profile bundle patch.
+#
+# This layer is applied after @deepseek-ai/dsh-base and before the profile's own
+# cordis.patch.yml, so the row below can be overridden or disabled by id from
+# the profile.
+#
+# The row mounts @deepseek-ai/dsh-mcp-client against the Figma remote MCP
+# server — the endpoint Figma documents for MCP clients:
+#
+#   { "mcpServers": { "Figma": { "url": "https://mcp.figma.com/mcp" } } }
+#
+# Authentication. The server is OAuth-protected, and the MCP client shipped with
+# the harness speaks plain Streamable HTTP without an OAuth handshake. The row
+# therefore sends a Figma personal access token in the header the server itself
+# accepts (X-Figma-Token). The token is read when the row activates, in this
+# order:
+#
+#   1. FIGMA_API_KEY or FIGMA_TOKEN in the environment;
+#   2. `api_key:` in $DSH_HOME/figma.yml (created by the installer).
+#
+# With no token the header is omitted, the server answers 401, and the row only
+# logs a connection error; the harness still starts (failOnStartupError: false).
+#
+# Tools reach the model as mcp__figma__<tool> — the same names the official
+# Figma plugin produces. The tool list is discovered from the
+# server at startup, so new Figma tools need no plugin update.
+
+- insert:
+    - id: mcp-figma-remote
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        transport: streamable-http
+        serverName: figma
+        url: https://mcp.figma.com/mcp
+        headers: !!js >-
+          (() => {
+            const env = process.env;
+            let token = (env.FIGMA_API_KEY || env.FIGMA_TOKEN || '').trim();
+            const get = typeof process.getBuiltinModule === 'function' ? process.getBuiltinModule.bind(process) : null;
+            if (!token && get) {
+              try {
+                const fs = get('node:fs');
+                const os = get('node:os');
+                const path = get('node:path');
+                const home = (env.DSH_HOME || '').trim() || path.join(os.homedir(), '.dsh');
+                const text = fs.readFileSync(path.join(home, 'figma.yml'), 'utf8');
+                const match = text.match(/^[ \t]*api_key[ \t]*:[ \t]*(.*)$/m);
+                if (match) token = match[1].replace(/[ \t]+#.*$/, '').trim().replace(/^["'](.*)["']$/, '$1').trim();
+              } catch (error) {}
+            }
+            return token ? { 'X-Figma-Token': token } : {};
+          })()
+        toolCallTimeoutMs: 180000
+        failOnStartupError: false

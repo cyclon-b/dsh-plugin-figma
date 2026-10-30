@@ -1,0 +1,14 @@
+# Figma plugin configuration for DeepSeek Harness.
+#
+# The installer copies this file to $DSH_HOME/figma.yml on first install.
+# The plugin bundle reads it every time the mcp-figma-remote row activates,
+# so a changed token takes effect after the harness restarts.
+#
+# Personal access token: figma.com -> Settings -> Security -> Personal access
+# tokens. Reading designs needs the "File content -> Read" scope; write-to-
+# canvas tools need the write scopes Figma lists for them.
+#
+# FIGMA_API_KEY (or FIGMA_TOKEN) in the environment takes precedence over this
+# file. The file must not be committed to git.
+
+api_key: ""
