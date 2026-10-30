@@ -12,7 +12,7 @@ server and installs Figma's Agent Skills for design-to-code workflows.
 |---|---|
 | MCP server `figma` | Connects `https://mcp.figma.com/mcp` — the endpoint from Figma's own MCP configuration — through the harness-native `@deepseek-ai/dsh-mcp-client`. Tools reach the model as `mcp__figma__get_design_context`, `mcp__figma__get_screenshot`, `mcp__figma__use_figma`, and so on, discovered from the server at startup |
 | 16 Agent Skills | The official Figma skills (`figma-use`, `figma-design-to-code`, `figma-generate-design`, `figma-generate-library`, `figma-code-connect`, `figma-spec`, `figma-swiftui`, shaders, motion, FigJam, Slides, …) copied unmodified from the official plugin bundle 2.2.157 |
-| `figma.yml` | The plugin's YAML config; set the Figma personal access token once, in one file outside the repository |
+| `figma.yml` | The plugin's YAML config; set the Figma OAuth access token once, in one file outside the repository |
 
 The plugin does not implement Figma tools itself: the server publishes them and
 the harness MCP client registers them. A Figma update adds tools without a
@@ -24,10 +24,10 @@ plugin update.
   `headless`, `desktop`.
 - Node.js **≥ 22.3** — the harness requirement; the bundle patch reads the
   config file with `process.getBuiltinModule`.
-- A Figma account and a **personal access token** (`figd_…`) from
-  [figma.com/settings](https://www.figma.com/settings) → **Security** →
-  **Personal access tokens**. Reading designs needs the **File content → Read**
-  scope; the write-to-canvas tools need the scopes Figma lists for them.
+- A Figma account and an **OAuth access token** (`figu_…`) issued to a client
+  authorized for the Figma MCP server. The remote server does **not** accept a
+  personal access token (`figd_…`): that token works with the Figma REST API
+  only, and the MCP endpoint rejects it with `401`.
 - Windows PowerShell 5.1+ or any POSIX `sh`.
 
 ## Install
@@ -48,7 +48,7 @@ Then put the token into the config and restart the harness:
 
 ```yaml
 # %USERPROFILE%\.dsh\figma.yml   ($DSH_HOME/figma.yml)
-api_key: "figd_your_token_here"
+access_token: "figu_your_oauth_token_here"
 ```
 
 The installer creates that file from `figma.example.yml` on first install. For an
@@ -85,25 +85,34 @@ picks up patch changes on the next harness start.
 `$DSH_HOME/figma.yml` is read every time the MCP row activates:
 
 ```yaml
-api_key: "figd_..."
+access_token: "figu_..."
 ```
 
-`FIGMA_API_KEY` or `FIGMA_TOKEN` in the environment takes precedence. The token
-is sent in the `X-Figma-Token` header. With no token the header is omitted, the
-server answers `401`, and the harness still starts; only the Figma tools are
-missing.
+`api_key:` is accepted as an alias for the same value. `FIGMA_ACCESS_TOKEN`,
+`FIGMA_API_KEY` or `FIGMA_TOKEN` in the environment takes precedence. The header
+is selected by the token prefix: `figu_…` → `Authorization: Bearer`, `figd_…` →
+`X-Figma-Token` (REST/local servers; the remote MCP endpoint rejects it). With no
+token the header is omitted, the server answers `401`, and the harness still
+starts; only the Figma tools are missing.
 
-### Why a personal access token and not OAuth
+### Authentication model: a pre-issued OAuth access token
 
-The remote Figma MCP server protects itself with OAuth. The MCP client shipped
-with the harness speaks plain Streamable HTTP without an OAuth handshake, and
-Figma refuses dynamic client registration for arbitrary clients
-(`POST https://api.figma.com/v1/oauth/mcp/register` → `403`), so a profile cannot
-register itself the way a registered client is. Figma's server
-accepts a personal access token in `X-Figma-Token` — a header it advertises
-itself (`access-control-allow-headers: Content-Type, X-Figma-Token,
-Authorization`) — so that is the authentication path this plugin uses. A `figd_`
-token must go in `X-Figma-Token`; `Authorization: Bearer` is rejected.
+The remote Figma MCP server is OAuth-only. The MCP client shipped with the
+harness speaks plain Streamable HTTP without an OAuth handshake, and Figma
+refuses dynamic client registration for arbitrary clients
+(`POST https://api.figma.com/v1/oauth/mcp/register` → `403`), so a dsh profile
+cannot complete the OAuth flow itself. The plugin therefore uses an OAuth access
+token (`figu_…`) issued by Figma to an already-authorized MCP client, sends it as
+`Authorization: Bearer <token>`, and reads it from `figma.yml` on every start.
+
+A personal access token (`figd_…`) is not a substitute: the REST API accepts it
+(`GET https://api.figma.com/v1/me` succeeds), but `https://mcp.figma.com/mcp`
+answers `401 Unauthorized` when the token is sent in `X-Figma-Token`. The row
+still supports that header shape for local or REST-backed MCP servers, selected
+by the token prefix.
+
+OAuth access tokens expire (currently about 90 days); replace `access_token`
+when the server starts returning `401`.
 
 ## Verify
 
@@ -151,8 +160,9 @@ while another profile still uses the plugin.
 | Symptom | What to check |
 |---|---|
 | No `mcp__figma__*` tools | Restart the harness. Check `dsh --profile web --dump-config \| grep mcp-figma-remote`. Check the harness log for `figma` connection errors |
-| `401 Unauthorized` | Token missing, wrong, expired, or lacks the `File content → Read` scope. Recheck `api_key`; environment variables override the file |
-| `figd_ tokens must be passed via X-Figma-Token` | A proxy rewrote the header into `Authorization`; the row already uses `X-Figma-Token` |
+| `401 Unauthorized` | The token is missing, expired, or is a `figd_` personal token. The remote MCP server accepts only `figu_` OAuth access tokens. Environment variables override the file |
+| `figd_ tokens must be passed via X-Figma-Token` | A `figd_` token was sent as `Authorization: Bearer`. The remote endpoint needs a `figu_` OAuth token; leave `figd_` for local/REST servers |
+| Access token expired | Replace `access_token` in `figma.yml` with a fresh `figu_…` token and restart the harness |
 | Skills were replaced | Restore from `$DSH_HOME/.dsh-figma-plugin-backup/<timestamp>/`, or run the uninstaller |
 | Node older than 22.3 | The patch cannot read `figma.yml`; export `FIGMA_API_KEY` instead, or upgrade Node |
 | Two Figma rows / old prototype | Remove the earlier `dsh-plugin-figma` link and bundle from the profile before installing this one |
@@ -172,7 +182,8 @@ dsh-plugin-figma/
 
 ## Limitations
 
-- OAuth is not performed; only a personal access token is supported.
+- The OAuth handshake is not performed; the plugin uses a pre-issued OAuth
+  access token, which expires and must be renewed.
 - Figma applies rate limits to tools that read designs, depending on the account
   plan and seat; write tools are exempt.
 - The plugin does not install or launch the Figma desktop app and does not add

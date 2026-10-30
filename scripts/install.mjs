@@ -8,7 +8,7 @@
 //      mounts @deepseek-ai/dsh-mcp-client against the Figma remote server;
 //   2. Figma's Agent Skills are copied into `$DSH_HOME/skills`, the user skill
 //      root every profile discovers;
-//   3. `$DSH_HOME/figma.yml` is created for the Figma personal access token.
+//   3. `$DSH_HOME/figma.yml` is created for the Figma OAuth access token.
 //
 // Existing skills with the same names are moved to
 // `$DSH_HOME/.dsh-figma-plugin-backup/<timestamp>/` before being replaced, so
@@ -47,8 +47,9 @@ Options:
   --uninstall        remove the bundle, the link and the installed skills
   -h, --help         show this help
 
-The Figma personal access token belongs in $DSH_HOME/${CONFIG_FILENAME} (api_key:).
-The environment variables FIGMA_API_KEY and FIGMA_TOKEN override it.`;
+The Figma token belongs in $DSH_HOME/${CONFIG_FILENAME} (access_token:).
+The environment variables FIGMA_ACCESS_TOKEN, FIGMA_API_KEY and FIGMA_TOKEN
+override it. mcp.figma.com accepts only an OAuth access token (figu_...).`;
 
 function fail(message) {
   console.error(`\nОшибка: ${message}\n`);
@@ -397,21 +398,25 @@ function ensureConfig(context) {
 }
 
 function readToken(context) {
-  const fromEnv = (process.env.FIGMA_API_KEY || process.env.FIGMA_TOKEN || '').trim();
-  if (fromEnv) return { token: fromEnv, source: 'переменная окружения FIGMA_API_KEY/FIGMA_TOKEN' };
+  const fromEnv = (process.env.FIGMA_ACCESS_TOKEN || process.env.FIGMA_API_KEY || process.env.FIGMA_TOKEN || '').trim();
+  if (fromEnv) return { token: fromEnv, source: 'переменная окружения FIGMA_ACCESS_TOKEN/FIGMA_API_KEY/FIGMA_TOKEN' };
   let text;
   try {
     text = fs.readFileSync(context.configPath, 'utf8');
   } catch {
     return { token: '', source: null };
   }
-  const match = text.match(/^[ \t]*api_key[ \t]*:[ \t]*(.*)$/m);
-  if (!match) return { token: '', source: null };
-  const token = match[1]
-    .replace(/[ \t]+#.*$/, '')
-    .trim()
-    .replace(/^["'](.*)["']$/, '$1')
-    .trim();
+  const clean = (match) =>
+    match
+      ? match[1]
+          .replace(/[ \t]+#.*$/, '')
+          .trim()
+          .replace(/^["'](.*)["']$/, '$1')
+          .trim()
+      : '';
+  const token =
+    clean(text.match(/^[ \t]*access_token[ \t]*:[ \t]*(.*)$/m)) ||
+    clean(text.match(/^[ \t]*api_key[ \t]*:[ \t]*(.*)$/m));
   return token ? { token, source: context.configPath } : { token: '', source: null };
 }
 
@@ -424,7 +429,7 @@ async function verifyToken(token) {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json, text/event-stream',
-        'X-Figma-Token': token,
+        ...(token.startsWith('figu_') ? { Authorization: `Bearer ${token}` } : { 'X-Figma-Token': token }),
       },
       body: JSON.stringify({
         jsonrpc: '2.0',
@@ -450,25 +455,33 @@ async function reportToken(context) {
   const { token, source } = readToken(context);
   if (!token) {
     info('');
-    info(`Токен Figma пока не задан. Открой ${context.configPath} и заполни api_key.`);
-    info('Токен: figma.com → Settings → Security → Personal access tokens (scope File content → Read).');
+    info(`Токен Figma пока не задан. Открой ${context.configPath} и заполни access_token.`);
+    info('Нужен OAuth access token (figu_…): mcp.figma.com принимает только его.');
     return;
   }
   info('');
-  info(`Токен Figma найден (${source}). Проверяю доступ к ${FIGMA_MCP_URL}…`);
+  info(`Токен Figma найден (${source}).`);
+  if (token.startsWith('figd_')) {
+    warn(
+      'это персональный токен (figd_). REST API Figma его принимает, но удалённый MCP-сервер — ' +
+        'только OAuth access token (figu_…). Заполни access_token, иначе инструменты mcp__figma__* не появятся.',
+    );
+    return;
+  }
+  info(`Проверяю доступ к ${FIGMA_MCP_URL}…`);
   const result = await verifyToken(token);
   if (result.error) {
     warn(`проверить токен не удалось (${result.error}). Плагин установлен; соединение проверится при старте dsh.`);
     return;
   }
   if (result.status === 200) {
-    info('Сервер принял токен (HTTP 200).');
+    info('Сервер принял access-токен (HTTP 200).');
     return;
   }
   if (result.status === 401 || result.status === 403) {
     warn(
-      `сервер отклонил токен (HTTP ${result.status}). Проверь значение api_key и scope токена; ` +
-        'без рабочего токена инструменты mcp__figma__* не появятся.',
+      `сервер отклонил токен (HTTP ${result.status}). Нужен действующий OAuth access token (figu_…); ` +
+        'без него инструменты mcp__figma__* не появятся.',
     );
     return;
   }

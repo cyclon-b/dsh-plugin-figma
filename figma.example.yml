@@ -4,11 +4,20 @@
 # The plugin bundle reads it every time the mcp-figma-remote row activates,
 # so a changed token takes effect after the harness restarts.
 #
-# Personal access token: figma.com -> Settings -> Security -> Personal access
-# tokens. Reading designs needs the "File content -> Read" scope; write-to-
-# canvas tools need the write scopes Figma lists for them.
+# The remote MCP server (mcp.figma.com) is OAuth-only. It accepts an OAuth
+# access token (figu_...) in Authorization: Bearer. A personal access token
+# (figd_...) is valid for the Figma REST API, but the remote MCP server rejects
+# it with 401, so it cannot be used here.
 #
-# FIGMA_API_KEY (or FIGMA_TOKEN) in the environment takes precedence over this
-# file. The file must not be committed to git.
+# The token is sent with the header its prefix selects:
+#   figu_... -> Authorization: Bearer <token>
+#   figd_... -> X-Figma-Token: <token>   (REST/local servers; not mcp.figma.com)
+#
+# FIGMA_ACCESS_TOKEN, FIGMA_API_KEY and FIGMA_TOKEN in the environment take
+# precedence over this file. The file must not be committed to git.
 
-api_key: ""
+# OAuth access token from an authorized MCP client.
+access_token: ""
+
+# Alias for the same value; both keys are read, access_token first.
+# api_key: ""

@@ -24,10 +24,10 @@ DSH-аналог официального плагина Figma. Подключа
   `web`, `acp`, `headless`, `desktop`.
 - Node.js **≥ 22.3** — требование харнесса; выражение в патче читает файл
   конфигурации через `process.getBuiltinModule`.
-- Аккаунт Figma и **персональный токен** (`figd_…`) из
-  [figma.com/settings](https://www.figma.com/settings) → **Security** →
-  **Personal access tokens**. Для чтения макетов достаточно scope **File content
-  → Read**; инструментам записи в холст нужны соответствующие scope.
+- Аккаунт Figma и **OAuth access token** (`figu_…`), выданный клиенту,
+  авторизованному для Figma MCP-сервера. Удалённый сервер **не принимает**
+  персональный токен (`figd_…`): он работает только с REST API Figma, а
+  MCP-эндпоинт отвечает на него `401`.
 - Windows PowerShell 5.1+ или любой POSIX `sh`.
 
 ## Установка
@@ -48,7 +48,7 @@ cd dsh-plugin-figma
 
 ```yaml
 # %USERPROFILE%\.dsh\figma.yml   ($DSH_HOME/figma.yml)
-api_key: "figd_твой_токен"
+access_token: "figu_твой_oauth_токен"
 ```
 
 Установщик создаёт этот файл из `figma.example.yml` при первой установке. Для
@@ -86,26 +86,34 @@ install.ps1 -Profile acp -DshHome D:\dsh -Dsh "C:\path\dsh.cmd"
 `$DSH_HOME/figma.yml` читается каждый раз, когда активируется MCP-строка:
 
 ```yaml
-api_key: "figd_..."
+access_token: "figu_..."
 ```
 
-Переменные окружения `FIGMA_API_KEY` или `FIGMA_TOKEN` имеют приоритет. Токен
-передаётся в заголовке `X-Figma-Token`. Без токена заголовок не подставляется,
-сервер отвечает `401`, харнесс всё равно стартует — просто без инструментов
-Figma.
+`api_key:` принимается как псевдоним того же значения. Переменные окружения
+`FIGMA_ACCESS_TOKEN`, `FIGMA_API_KEY` или `FIGMA_TOKEN` имеют приоритет. Заголовок
+выбирается по префиксу токена: `figu_…` → `Authorization: Bearer`, `figd_…` →
+`X-Figma-Token` (REST/локальные серверы; удалённый MCP-эндпоинт его отклоняет). Без
+токена заголовок не подставляется, сервер отвечает `401`, харнесс всё равно
+стартует — просто без инструментов Figma.
 
-### Почему персональный токен, а не OAuth
+### Модель авторизации: заранее выданный OAuth access token
 
-Удалённый Figma MCP-сервер защищён OAuth. Клиент MCP в харнессе говорит по
-обычному Streamable HTTP и не выполняет OAuth-рукопожатие, а Figma закрыла
-динамическую регистрацию клиентов для произвольных приложений
+Удалённый Figma MCP-сервер работает только через OAuth. Клиент MCP в харнессе
+говорит по обычному Streamable HTTP и не выполняет OAuth-рукопожатие, а Figma
+закрыла динамическую регистрацию клиентов для произвольных приложений
 (`POST https://api.figma.com/v1/oauth/mcp/register` → `403`), поэтому профиль не
-может зарегистрироваться сам так, как это делает зарегистрированный клиент.
-Сервер
-Figma принимает персональный токен в заголовке `X-Figma-Token` — он сам его
-разрешает (`access-control-allow-headers: Content-Type, X-Figma-Token,
-Authorization`), — и плагин использует этот путь. Токен `figd_` обязан идти
-именно в `X-Figma-Token`; с `Authorization: Bearer` сервер отвечает ошибкой.
+может пройти OAuth-поток сам. Плагин использует OAuth access token (`figu_…`),
+выданный Figma уже авторизованному MCP-клиенту, отправляет его как
+`Authorization: Bearer <token>` и читает из `figma.yml` при каждом старте.
+
+Персональный токен (`figd_…`) не заменяет его: REST API его принимает
+(`GET https://api.figma.com/v1/me` проходит), но `https://mcp.figma.com/mcp`
+отвечает `401 Unauthorized`, если передать его в `X-Figma-Token`. Форма с этим
+заголовком в строке остаётся для локальных и REST-серверов и выбирается по
+префиксу токена.
+
+OAuth access token истекает (сейчас примерно через 90 дней); замени
+`access_token`, когда сервер начнёт отвечать `401`.
 
 ## Проверка
 
@@ -152,8 +160,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
 | Симптом | Что проверить |
 |---|---|
 | Нет инструментов `mcp__figma__*` | Перезапустить харнесс. Проверить `dsh --profile web --dump-config \| grep mcp-figma-remote`. Посмотреть в логе ошибку подключения `figma` |
-| `401 Unauthorized` | Токен не задан, неверный, истёк или без scope `File content → Read`. Перепроверить `api_key`; переменные окружения перекрывают файл |
-| `figd_ tokens must be passed via X-Figma-Token` | Прокси переписал заголовок в `Authorization`; строка уже использует `X-Figma-Token` |
+| `401 Unauthorized` | Токен не задан, истёк или это `figd_`-токен. Удалённый MCP-сервер принимает только OAuth access token `figu_`. Переменные окружения перекрывают файл |
+| `figd_ tokens must be passed via X-Figma-Token` | В `Authorization: Bearer` отправлен `figd_`-токен. Удалённому эндпоинту нужен `figu_`; `figd_` оставь для локальных/REST-серверов |
+| Access token истёк | Заменить `access_token` в `figma.yml` на свежий `figu_…` и перезапустить харнесс |
 | Скиллы заменились | Восстановить из `$DSH_HOME/.dsh-figma-plugin-backup/<timestamp>/` или запустить удаление |
 | Node старше 22.3 | Патч не сможет прочитать `figma.yml`; задай `FIGMA_API_KEY` в окружении или обнови Node |
 | Две строки Figma / старый прототип | Убрать прежнюю ссылку и бандл `dsh-plugin-figma` из профиля до установки этого плагина |
@@ -173,7 +182,8 @@ dsh-plugin-figma/
 
 ## Ограничения
 
-- OAuth не выполняется; поддерживается только персональный токен.
+- OAuth-рукопожатие не выполняется; используется заранее выданный OAuth access
+  token, который истекает и требует обновления.
 - Figma ограничивает частоту инструментов чтения макетов в зависимости от плана
   и места в аккаунте; инструменты записи под лимит не попадают.
 - Плагин не устанавливает и не запускает приложение Figma и не добавляет его

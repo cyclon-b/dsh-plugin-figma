@@ -5,7 +5,7 @@
 .DESCRIPTION
     Links the plugin bundle into the profile, enables it in dsh.profile.bundles,
     copies Figma's Agent Skills into the harness home, and creates figma.yml for
-    the Figma personal access token.
+    the Figma OAuth access token.
 
 .PARAMETER Profile
     dsh profile name. Defaults to "web" (or DSH_PROFILE).
