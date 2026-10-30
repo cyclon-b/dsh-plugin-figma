@@ -51,6 +51,10 @@ Then put the token into the config and restart the harness:
 api_key: "figd_your_token_here"
 ```
 
+The installer creates that file from `figma.example.yml` on first install. For an
+unattended install you can instead put a filled `figma.yml` next to the
+installer before running it; the installer copies it into `$DSH_HOME`.
+
 ```sh
 dsh web
 ```
