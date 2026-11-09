@@ -227,5 +227,14 @@ dsh-plugin-figma/
 
 ## License
 
-MIT for the bundle patch, installer and documentation. The skills are Figma's
-and are excluded from that license — see [NOTICE](NOTICE).
+[PolyForm Noncommercial 1.0.0](LICENSE) for the bundle patch, installer and
+documentation. Commercial use is not permitted: neither this project nor works
+based on it may be used, modified for, or distributed for a commercial purpose.
+Turning it into a paid product, a paid service or a closed commercial tool is a
+licence violation.
+
+The skills under `skills/` are Figma's and are excluded from this license — see
+[NOTICE](NOTICE).
+
+Releases up to and including 1.1.0 were published under MIT and remain
+available under those terms to everyone who received them.

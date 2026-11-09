@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Relicensed from MIT to PolyForm Noncommercial 1.0.0. Commercial use of the
+  plugin and of works based on it is no longer permitted.
+
 ## 1.1.0 — 2026-10-30
 
 - Browser OAuth: `auth.ps1` / `auth.sh` run authorization code + PKCE with a
