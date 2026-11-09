@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Required Notice: Copyright (c) 2026 Gennady Artamonov
 // Installs dsh-plugin-figma into a DeepSeek Harness profile and the harness home.
 //
 // The harness has no plugin registry for MCP servers or skills, so the install

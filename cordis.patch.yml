@@ -1,4 +1,5 @@
 # dsh-plugin-figma — the profile bundle patch.
+# Required Notice: Copyright (c) 2026 Gennady Artamonov
 #
 # This layer is applied after @deepseek-ai/dsh-base and before the profile's own
 # cordis.patch.yml, so the row below can be overridden or disabled by id from

@@ -1,4 +1,5 @@
 # Figma plugin configuration for DeepSeek Harness.
+# Required Notice: Copyright (c) 2026 Gennady Artamonov
 #
 # The installer copies this file to $DSH_HOME/figma.yml on first install.
 # The plugin bundle reads it every time the mcp-figma-remote row activates,

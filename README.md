@@ -233,6 +233,11 @@ based on it may be used, modified for, or distributed for a commercial purpose.
 Turning it into a paid product, a paid service or a closed commercial tool is a
 licence violation.
 
+Copyright (c) 2026 Gennady Artamonov.
+
+The license requires the `Required Notice:` line carried in every source file
+to be passed on to anyone who receives a copy, along with the license terms.
+
 The skills under `skills/` are Figma's and are excluded from this license — see
 [NOTICE](NOTICE).
 

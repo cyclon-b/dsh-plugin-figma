@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# Required Notice: Copyright (c) 2026 Gennady Artamonov
 # Authorizes dsh-plugin-figma against the Figma remote MCP server.
 # Run ./auth.sh --help for the full option list.
 set -eu

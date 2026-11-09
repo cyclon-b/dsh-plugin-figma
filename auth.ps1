@@ -12,6 +12,7 @@
     powershell -NoProfile -ExecutionPolicy Bypass -File .\auth.ps1 -Refresh
     powershell -NoProfile -ExecutionPolicy Bypass -File .\auth.ps1 -Status
 #>
+# Required Notice: Copyright (c) 2026 Gennady Artamonov
 [CmdletBinding()]
 param(
     [string]$DshHome = '',

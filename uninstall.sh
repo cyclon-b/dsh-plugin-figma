@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# Required Notice: Copyright (c) 2026 Gennady Artamonov
 # Removes dsh-plugin-figma from a DeepSeek Harness profile.
 # Run ./uninstall.sh --help for the full option list.
 set -eu

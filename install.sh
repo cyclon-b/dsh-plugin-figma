@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# Required Notice: Copyright (c) 2026 Gennady Artamonov
 # Installs dsh-plugin-figma into a DeepSeek Harness profile.
 # Run ./install.sh --help for the full option list.
 set -eu

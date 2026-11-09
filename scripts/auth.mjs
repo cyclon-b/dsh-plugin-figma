@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Required Notice: Copyright (c) 2026 Gennady Artamonov
 // Browser OAuth for the Figma remote MCP server.
 //
 // The MCP client in the harness does not perform an OAuth handshake, so this

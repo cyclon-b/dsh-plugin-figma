@@ -4,6 +4,8 @@
 
 - Relicensed from MIT to PolyForm Noncommercial 1.0.0. Commercial use of the
   plugin and of works based on it is no longer permitted.
+- Add the `Required Notice:` copyright line to the license and to every source
+  file, and credit Gennady Artamonov as the author.
 
 ## 1.1.0 — 2026-10-30
 

@@ -11,6 +11,7 @@
     powershell -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
     powershell -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1 -Profile acp
 #>
+# Required Notice: Copyright (c) 2026 Gennady Artamonov
 [CmdletBinding()]
 param(
     [string]$Profile = '',
