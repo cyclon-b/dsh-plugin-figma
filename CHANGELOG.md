@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 — 2026-11-09
 
 - Relicensed from MIT to PolyForm Noncommercial 1.0.0. Commercial use of the
   plugin and of works based on it is no longer permitted.
